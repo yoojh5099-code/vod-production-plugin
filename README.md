@@ -31,8 +31,10 @@ Claude Code 세션에서:
 
 ```
 /plugin marketplace add yoojh5099-code/vod-production-plugin
-/plugin install vod-production-plugin@vod-production-plugin
+/plugin install vod-production-plugin@vod-production
 ```
+
+> 마켓플레이스 이름은 `vod-production` (repo 루트의 `.claude-plugin/marketplace.json`에 정의), 플러그인 이름은 `vod-production-plugin` 입니다.
 
 로컬 개발용으로 테스트하려면:
 
