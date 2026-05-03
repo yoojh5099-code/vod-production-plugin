@@ -1,0 +1,44 @@
+# Brand Logo Library
+#
+# 용도: YouTube 영상 제작 시 script/narration에서 브랜드가 언급되면
+#       vp-video-composer가 이 매니페스트를 조회하여 해당 로고 파일을
+#       프로젝트의 public/images/에 자동 복사하고 SceneVisual에 배치한다.
+#
+# 매칭 규칙:
+#   1. narration/subtitle/visual_note에 aliases 중 하나라도 등장하면 match
+#   2. 매칭된 씬에 logoSrc를 주입 (QuadrantMatrix, BrandLogo 등에 전달)
+#   3. 매칭 로그는 <project>/_workspace/logo_matches.md에 기록
+#
+# 저작권: 대부분 nominative fair use(회사·제품 지칭 맥락) 범위에서 허용.
+#        변형·왜곡 금지. 부정적·조롱 맥락에서는 사용하지 말 것.
+
+logos:
+  figma:
+    file: figma.svg
+    aliases: [figma, FIGMA, 피그마]
+    usage_note: "nominative fair use — 회사·제품 지칭 맥락에서만"
+
+  anthropic:
+    file: anthropic.svg
+    aliases: [anthropic, Anthropic, 앤트로픽, 클로드, claude, "claude design"]
+    usage_note: "Claude 제품군 포함. Claude Design·Claude Code·Claude API 언급 시 사용 가능"
+
+  canva:
+    file: canva.svg
+    aliases: [canva, Canva, 캔바]
+    usage_note: "nominative fair use"
+
+  datadog:
+    file: datadog.svg
+    aliases: [datadog, Datadog, 데이터독]
+    usage_note: "nominative fair use"
+
+  adobe:
+    file: adobe.svg
+    aliases: [adobe, Adobe, 어도비]
+    usage_note: "nominative fair use. Adobe 제품군 전반(Photoshop·Illustrator·Figma 이후 인수 등) 포괄 사용"
+
+# 추가 방법:
+#   1. 새 SVG를 이 폴더에 업로드 (공식 프레스킷에서만 받기)
+#   2. 위 logos 섹션에 키 + aliases + usage_note 추가
+#   3. 가능하면 downloaded_at, source_url 기록

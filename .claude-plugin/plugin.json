@@ -1,0 +1,11 @@
+{
+  "name": "vod-production-plugin",
+  "version": "1.0.0",
+  "description": "YouTube 콘텐츠 기획부터 영상 제작까지 에이전트 팀 기반 엔드투엔드 파이프라인. content-production(기획) + video-production(제작) 2개 오케스트레이터와 관련 스킬/에이전트를 번들.",
+  "author": {
+    "name": "yoojh5099"
+  },
+  "homepage": "https://github.com/yoojh5099-code/vod-production-plugin",
+  "repository": "https://github.com/yoojh5099-code/vod-production-plugin.git",
+  "license": "MIT"
+}
