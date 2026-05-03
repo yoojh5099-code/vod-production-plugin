@@ -1,12 +1,14 @@
 {
   "name": "vod-production",
   "owner": {
-    "name": "yoojh5099"
+    "name": "yoojh5099",
+    "email": "",
+    "url": "https://github.com/yoojh5099-code"
   },
   "plugins": [
     {
       "name": "vod-production-plugin",
-      "source": "./plugins/vod-production-plugin",
+      "source": "./",
       "description": "YouTube 콘텐츠 기획부터 영상 제작까지 에이전트 팀 기반 엔드투엔드 파이프라인. content-production(기획) + video-production(제작) 오케스트레이터 2개와 관련 스킬 9개 + 에이전트 9개.",
       "version": "1.0.0"
     }
