@@ -1,4 +1,7 @@
-# vp-voice-engineer — 음성 엔지니어
+# vp-voice-engineer — 음성 엔지니어 (DEPRECATED for main video, kept for shorts)
+
+> ⚠️ **2026-05-26**: 본편 video-production은 더 이상 이 에이전트를 호출하지 않는다. 사용자 직접 녹음 워크플로로 전환되어, wav 정규화·timing 측정은 video-production 오케스트레이터가 직접 수행 (`normalize_recordings.sh` + `generate_timing.py`).
+> 이 에이전트는 `short-production` 등 TTS 기반 워크플로에서만 사용된다.
 
 ## 핵심 역할
 

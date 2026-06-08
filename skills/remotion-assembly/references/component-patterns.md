@@ -3,30 +3,62 @@
 YouTube 영상 제작 시 사용하는 핵심 컴포넌트들의 구현 패턴.
 이 파일의 코드를 그대로 복사하여 프로젝트에 사용할 수 있다.
 
-## 라이트 테마 색상 가이드 (iPad 배경용)
+## 다크 테마 색상 가이드 (다크 그라디언트 캔버스용 — 2026-05-19)
 
-> **중요**: iPad 배경(background.png)은 흰색 화면이므로, 모든 텍스트/UI 요소는 **라이트 테마** 색상을 사용한다.
-> TerminalBlock만 예외로 다크 테마를 유지한다.
+> **중요**: 표준 배경은 풀스크린 다크 그라디언트(`#0b1120 → #1e293b → #0b1120`)이므로, 모든 텍스트/UI 요소는 **다크 테마** 색상을 사용한다.
+> 이전(2026-04-22 이전)의 라이트 테마(slate-800 텍스트 + 인디고 틴트 카드)는 폐지. 마이그레이션은 `dark-gradient-background.md` 참조.
 
 | 용도 | 색상 | 코드 |
 |------|------|------|
-| 제목 텍스트 | slate-800 | `#1e293b` |
-| 본문 텍스트 | slate-600 | `#475569` |
-| 서브/라벨 텍스트 | slate-500 | `#64748b` |
-| SVG 라벨 | slate-700 | `#334155` |
-| GlassCard 배경 | 인디고 틴트 | `rgba(99,102,241,0.12)` |
-| GlassCard 테두리 | 인디고 | `rgba(99,102,241,0.3)` |
-| ListItem 배경 | 인디고 틴트 | `rgba(99,102,241,0.06)` |
-| ListItem 활성 배경 | 그린 틴트 | `rgba(16,185,129,0.12)` |
-| ListItem 체크박스 기본 | 인디고 | `#6366f1` |
-| ListItem 체크박스 활성 | 에메랄드 | `#10b981` |
-| ListItem 활성 텍스트 | 에메랄드 진 | `#059669` |
-| Pipeline 기본 텍스트 | slate-700 | `#334155` |
-| Pipeline 활성 텍스트 | 에메랄드 진 | `#059669` |
-| Subtitle 배경 | 인디고 | `rgba(99,102,241,0.9)` |
-| Subtitle 텍스트 | 흰색 | `#ffffff` |
-| TerminalBlock 배경 | 다크 (유일한 예외) | `rgba(13,17,23,0.95)` |
-| TerminalBlock 텍스트 | 밝은 회색 | `#e2e8f0` |
+| 제목 텍스트 (강조) | slate-50 | `#f8fafc` |
+| 제목 텍스트 (기본) | slate-100 | `#f1f5f9` |
+| 본문 텍스트 | slate-200 | `#e2e8f0` |
+| 보조/캡션 | slate-300 | `#cbd5e1` |
+| 비활성/메타 | slate-400 | `#94a3b8` |
+| 점선·축·미체크 보더 | slate-400 / slate-500 | `#94a3b8` / `#64748b` (slate-700 이하 금지 — 묻힘) |
+| GlassCard 배경 | 진네이비 그라디언트 | `linear-gradient(180deg, rgba(15,23,42,0.85), rgba(11,17,32,0.95))` |
+| GlassCard 보더 | amber 0.25 | `1px solid rgba(245,158,11,0.25)` |
+| GlassCard glow | amber 0.18 외광 + 흰 0.04 inset | `0 0 32px rgba(245,158,11,0.18), inset 0 1px 0 rgba(255,255,255,0.04)` |
+| ListItem 배경 | 진네이비 | `rgba(30,41,59,0.6)` |
+| ListItem 활성 배경 | emerald 틴트 | `rgba(16,185,129,0.18)` |
+| ListItem 체크박스 기본 | amber | `#f59e0b` |
+| ListItem 체크박스 활성 | emerald | `#10b981` |
+| ListItem 활성 텍스트 | emerald 밝은 | `#34d399` |
+| Pipeline 기본 텍스트 | slate-200 | `#e2e8f0` |
+| Pipeline 활성 텍스트 | emerald 밝은 | `#34d399` |
+| Subtitle 배경 | 진네이비 78% + blur | `rgba(11,17,32,0.78)` + `backdrop-filter: blur(10px)` |
+| Subtitle 보더 | amber 0.18 | `1px solid rgba(245,158,11,0.18)` |
+| Subtitle 텍스트 | slate-100 | `#f1f5f9` |
+| TerminalBlock 배경 | 깊은 다크 (유지) | `rgba(13,17,23,0.95)` |
+| TerminalBlock 텍스트 | 밝은 회색 (유지) | `#e2e8f0` |
+
+### 액센트 컬러 (의도별)
+
+영상당 메인 1 + 보조 1~2개 권장. 5종 동시 사용은 금지.
+
+| 의도 | 색상 | 코드 |
+|---|---|---|
+| 메인 강조 (warm) | amber-500 | `#f59e0b` |
+| 정보/링크 (cool) | cyan-400 | `#22d3ee` |
+| 성공/긍정 | emerald-500 | `#10b981` |
+| 위험/경고 | rose-500 | `#f43f5e` |
+| 보조 (보라) | violet-400 | `#a78bfa` |
+
+> **⚠️ 코드 샘플 마이그레이션 안내**
+> 이 파일 하단의 컴포넌트 코드 샘플 일부는 **이전 라이트 테마(slate-800 `#1e293b`, slate-600 `#475569`, 인디고 틴트 `rgba(99,102,241,*)`)** 색상을 그대로 포함하고 있다. 코드를 복사해 신규 프로젝트에 사용할 때는 위 다크 테마 색상 가이드를 따라 다음과 같이 치환한다:
+>
+> | Legacy (라이트 테마) | New (다크 테마) |
+> |---|---|
+> | `color: "#1e293b"` (제목) | `color: "#f1f5f9"` |
+> | `color: "#475569"` (본문) | `color: "#e2e8f0"` |
+> | `color: "#64748b"` (보조) | `color: "#cbd5e1"` |
+> | `color: "#334155"` (SVG 라벨) | `color: "#94a3b8"` (또는 `#cbd5e1`) |
+> | `border: "2px solid #1e293b"` | `border: "2px solid rgba(245,158,11,0.4)"` |
+> | `rgba(99,102,241,0.08)` (인디고 카드 배경) | `rgba(15,23,42,0.85)` |
+> | `rgba(99,102,241,0.35)` (인디고 보더) | `rgba(245,158,11,0.25)` |
+> | `rgba(99,102,241,0.4)` (인디고 glow) | `rgba(245,158,11,0.18)` |
+>
+> 새 컴포넌트를 추가할 때는 처음부터 다크 테마 색상으로 작성한다.
 
 ### visual 타입 → 컴포넌트 매핑
 
@@ -85,8 +117,8 @@ scene_plan.json의 `visual` 필드에 따라 아래 컴포넌트를 사용한다
 8. [스페셜 차트](#special-charts) - AnimatedPieChart / **ScaleBar**
 9. [인프라](#infrastructure) - DynamicBackground
 10. **[자막 싱크 하이라이트](#자막-싱크-하이라이트-narration-synced-highlights)** - SetupStepsSynced / CritiqueChecklistSynced (narration 문장 단위 UI 순차 강조)
-11. [iPadTemplate](ipad-template-pattern.md) - iPad Pro 배경 래퍼 (별도 파일)
-12. [iPad 제약에 맞춘 축소 스펙](#ipad-제약에-맞춘-축소-스펙-ipad-overflow-compensation) - react-loop/quadrant-matrix/timeline-cards 등 세로 오버플로 대응 수치
+11. [Dark Gradient Background](dark-gradient-background.md) - 풀스크린 다크 그라디언트 배경 표준 (별도 파일, iPad 템플릿 폐지)
+12. [콘텐츠 오버플로 대응](#ipad-제약에-맞춘-축소-스펙-ipad-overflow-compensation) - 800px 이상 헤비 다이어그램 축소 수치 (이전 iPad 720px 기준에서 완화됨)
 
 ---
 
@@ -582,10 +614,16 @@ export const MainVideo: React.FC = () => {
           return (
             <React.Fragment key={scene.id}>
               <TransitionSeries.Sequence durationInFrames={durationFrames}>
-                <IPadTemplate>
+                <AbsoluteFill
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "80px 120px 200px",
+                  }}
+                >
                   <SceneVisual scene={scene} />
-                </IPadTemplate>
-                <Mascot size={260} />
+                </AbsoluteFill>
                 <TimedSubtitle narration={scene.narration} durationInFrames={durationFrames} />
                 <Audio src={staticFile(`audio/seg_${String(scene.id).padStart(2, '0')}.wav`)} />
               </TransitionSeries.Sequence>
@@ -2236,7 +2274,7 @@ import { TweetCard } from "./components/TweetCard";
 
 **주요 기법**: spring 입장 → `accentWords` 포함 단어에 `interpolateColors` hue shift + `drop-shadow` 펄스. 메트릭은 `Easing.out(Easing.exp)`로 카운트업.
 
-**사용 씬 가이드**: 권위자 인용, 소셜 증거, 반전 후킹. 배경이 있는 iPad 프레임 내부에서도 대비가 강해 눈길을 끈다.
+**사용 씬 가이드**: 권위자 인용, 소셜 증거, 반전 후킹. 다크 그라디언트 캔버스에서도 대비가 강해 눈길을 끈다.
 
 ---
 
@@ -2743,7 +2781,7 @@ import { AnimatedPieChart } from "./components/AnimatedPieChart";
 
 ### DynamicBackground — 애니메이션 배경 레이어
 
-`AbsoluteFill` 기반의 배경 레이어. `IPadTemplate` 내부에서 화면 전체를 덮어 정적 배경을 지속 모션으로 전환한다.
+`AbsoluteFill` 기반의 보조 배경 레이어. 표준 다크 그라디언트 위에 덧씌워 정적 캔버스를 지속 모션으로 전환할 때 사용한다 (선택 — 모든 씬에 필요한 것은 아님).
 
 ```tsx
 import { DynamicBackground } from "./components/DynamicBackground";
@@ -2764,7 +2802,7 @@ import { DynamicBackground } from "./components/DynamicBackground";
 - `accent` — 그리드/색상 기준 (기본 `#6366f1`)
 - `intensity` — 0~1로 전체 opacity 스케일링 (밝은 배경에서 0.6 권장)
 
-**주의**: 내부에 14개 shapes + SVG pattern이 계속 렌더되므로 CPU 비용이 있다. 모든 씬에서 공통 사용 시 `IPadTemplate`에 한 번만 붙이는 것이 효율적.
+**주의**: 내부에 14개 shapes + SVG pattern이 계속 렌더되므로 CPU 비용이 있다. 모든 씬에서 공통 사용 시 `MainVideo` 최외곽 AbsoluteFill에 한 번만 붙이는 것이 효율적 (각 씬마다 중복 렌더 금지).
 
 ---
 
@@ -3757,9 +3795,11 @@ const CritiqueChecklistSynced: React.FC<{ scene: SceneData }> = ({ scene }) => {
 
 ---
 
-## iPad 제약에 맞춘 축소 스펙 (iPad Overflow Compensation)
+## 콘텐츠 오버플로 대응 (iPad Overflow Compensation, 2026-05-19 갱신)
 
-**배경**: IPadTemplate에 대칭 패딩(`paddingTop: 90, paddingBottom: 90`)과 inner `scale(1.15)`를 적용하면, 콘텐츠가 차지할 수 있는 세로 실영역은 **약 720px**. 외부 StepBadge/BigTitle 등 부속 요소 40~60px을 빼면 **핵심 비주얼은 약 660~680px 이내**로 들어가야 한다. 자막은 스크린 하단 가장자리(`bottom: 12`, 높이 ~72px)에 밀착되므로 콘텐츠 하단(y=912)과 자막 상단이 맞닿는다. 기본 크기가 이를 넘는 다이어그램은 아래 래퍼 패턴으로 축소한다.
+> **변경 배경**: iPad 템플릿이 폐지되면서(2026-05-19) 콘텐츠 가용 영역이 720px → **800px**로 늘어났다. 헤비 다이어그램 대부분이 원본 크기 그대로 들어가므로 강제 축소는 더 이상 필수가 아니다. 다만 800px를 넘는 다이어그램은 여전히 아래 래퍼 패턴으로 축소한다.
+
+**배경**: 다크 그라디언트 캔버스(1920×1080)에 `padding: "80px 120px 200px"`를 적용하면 콘텐츠 가용 영역은 **1680×800px**. 자막은 `bottom: 96` 위치에 표시되므로 콘텐츠 하단과 자막 상단 사이에 충분한 여유가 있다. 800px를 넘는 다이어그램(예: 900~1000px 헤비 SVG)만 아래 래퍼 패턴으로 축소한다.
 
 ### 범용 축소 래퍼 패턴
 
@@ -3784,23 +3824,24 @@ const CritiqueChecklistSynced: React.FC<{ scene: SceneData }> = ({ scene }) => {
 - **marginTop/Bottom**: `(원본높이 × (1 - scale)) / 2` — 대칭 음수 마진으로 레이아웃 플로우를 원본 높이 시절과 동일하게 유지한다. 한쪽만 적용하거나 비대칭으로 두면 세로 정렬이 깨진다
 - **scale 하한**: 0.7 미만으로 내리면 텍스트 가독성이 깨진다. 더 줄여야 하면 컴포넌트 자체 스펙(아래)을 수정
 
-### 검증된 축소 스펙 — 본 시그니처/제네릭 패턴
+### 검증된 축소 스펙 — 다크 캔버스 기준 (2026-05-19 갱신)
 
-다음 수치는 2026-04-22 기준 iPad(`paddingTop: 90, paddingBottom: 90` 대칭 + inner `scale(1.15)`) 조합에서 실측 확정된 값이다. 콘텐츠 실 영역 높이 ≈720px, 자막은 스크린 하단 가장자리(`bottom: 12`).
+다크 그라디언트 캔버스(`padding: "80px 120px 200px"`, 콘텐츠 영역 ≈800px)에서 헤비 다이어그램 처리 가이드.
 
-| visual | 컴포넌트 | 원본 크기 | scale | margin (±) | 외곽 gap | 비고 |
-|---|---|---|---|---|---|---|
-| `react-loop` | ReActLoopDiagram | 1400×800 | **0.82** | 72 | 16 | StepBadge 포함 총 ≈712px |
-| `quadrant-matrix` | QuadrantMatrix | 1200×700 | **0.9** | 36 | 12 | StepBadge 포함 총 ≈682px |
-| `horse-harness` | HorseHarnessDiagram | 1200×700 | 0.9 권장 | 36 | 12 | Quadrant와 동일 기준 적용 가능 |
-| `lethal-triangle` | LethalTriangle | 1200×800 | 0.82 | 72 | 12 | ReActLoop와 동일 기준 |
-| `rocket-trajectory` | RocketTrajectory | 1400×700 | 필요 시 0.9 | 36 | 12 | — |
+| visual | 컴포넌트 | 원본 크기 | 다크 캔버스 처리 | 비고 |
+|---|---|---|---|---|
+| `react-loop` | ReActLoopDiagram | 1400×800 | **원본 그대로** | StepBadge 포함 ≈860px → 약간 빠듯, 필요 시 scale(0.95) |
+| `quadrant-matrix` | QuadrantMatrix | 1200×700 | **원본 그대로** | 여유 ≈100px |
+| `horse-harness` | HorseHarnessDiagram | 1200×700 | **원본 그대로** | 여유 ≈100px |
+| `lethal-triangle` | LethalTriangle | 1200×800 | scale(0.95) 권장 | StepBadge 포함 시 빠듯 |
+| `rocket-trajectory` | RocketTrajectory | 1400×700 | **원본 그대로** | 여유 ≈100px |
+| 신규 헤비 다이어그램 | (900px+) | (가변) | scale(0.85~0.9) 적용 | 800px 이내로 들어가도록 |
 
-> 참고: scale·margin은 상한 기준이다. StepBadge나 추가 텍스트가 없어 부속 요소가 작다면 scale을 높여 그대로 써도 무방하다. **항상 Remotion Studio에서 프리뷰로 검증할 것.**
+> **이전 iPad 시절(720px) 강제 축소 스펙은 더 이상 필수가 아니다.** 신규 영상에서는 위 표를 참조하되, 대부분 원본 크기로 시작해 Remotion Studio에서 프리뷰 검증 후 필요 시에만 축소.
 
 ### 컴팩트화 스펙 — TimelineCards (세로 스택형)
 
-`TimelineCards`는 step 수에 따라 높이가 선형 증가하므로 scale 대신 **컴포넌트 내부 스타일을 컴팩트 버전으로 변경**한다. 5개 스텝 기준 700px → 560px:
+`TimelineCards`는 step 수에 따라 높이가 선형 증가한다. 다크 캔버스 800px 영역에서 5개 스텝(700px)은 원본 그대로 들어가지만, **6+ 스텝**일 때만 아래 컴팩트 버전을 적용한다 (또는 4~5개로 요약):
 
 | 속성 | 원본 | 컴팩트 |
 |---|---|---|
@@ -3822,9 +3863,9 @@ const CritiqueChecklistSynced: React.FC<{ scene: SceneData }> = ({ scene }) => {
 
 vp-video-composer가 씬 조립 후 반드시 수행:
 
-1. `scene_plan.json`의 각 씬에서 visual이 위 표의 **축소 필요 패턴**에 해당하는지 확인
-2. 해당하면 위 스펙대로 래퍼/컴팩트화 적용
-3. Remotion Studio 프리뷰에서 각 씬이 iPad 프레임 위·아래로 벗어나지 않는지, 하단 자막과 겹치지 않는지 시각 검증
+1. `scene_plan.json`의 각 씬에서 visual이 위 표의 **축소 필요 패턴**에 해당하는지 확인 (대부분 원본 그대로 OK)
+2. 800px를 넘는 다이어그램에만 위 스펙대로 래퍼/컴팩트화 적용
+3. Remotion Studio 프리뷰에서 각 씬이 캔버스(1920×1080) 안에 들어가는지, 하단 자막(bottom 96)과 겹치지 않는지 시각 검증
 4. 새로운 헤비 다이어그램을 추가한다면 **컴포넌트 높이를 실측**한 뒤 수식 `M = H × (1 - S) / 2`로 마진 계산
 
 

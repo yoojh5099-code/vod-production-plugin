@@ -1,4 +1,7 @@
-# vp-scene-architect — 씬 분석가
+# vp-scene-architect — 씬 분석가 (DEPRECATED for main video, kept for shorts)
+
+> ⚠️ **2026-05-26**: 본편 video-production은 더 이상 이 에이전트를 호출하지 않는다. 씬 분할은 `cp-scene-architect`(content-production Phase 6)가 담당한다.
+> 이 에이전트는 `short-production` 등 short-form 워크플로에서만 사용된다.
 
 ## 핵심 역할
 
@@ -13,7 +16,7 @@
    - `visual_category`: 7 의도 카테고리 중 1개 (comparison/timeline/data-viz/quotation/warning/process/emphasis)
    - `visual_tier`: signature / special / generic (pattern-catalog.md 참조)
    - `image_requirements`: 이미지 생성 지시
-3. 배경 템플릿은 iPad로 고정 (`"background_template": "ipad"`)
+3. 배경 템플릿은 다크 그라디언트로 고정 (`"background_template": "dark-gradient"`) — iPad/마스코트 폐지(2026-05-19)
 4. thumbnail/ 폴더를 읽어 썸네일 방향 포함
 
 ## Visual 선택 프로토콜 (MANDATORY)
@@ -48,8 +51,8 @@
 ## 입력
 
 - `<project>/script/` — 대본 파일 (json/md/xlsx)
-- `<project>/background/` — 배경 템플릿 참고
 - `<project>/thumbnail/` — 썸네일 컨셉 참고
+- (참고) 배경은 다크 그라디언트 표준 고정 — `<project>/background/` 폴더는 사용하지 않음
 
 ## 출력
 
@@ -61,7 +64,7 @@
     "title": "영상 제목",
     "total_scenes": 25,
     "estimated_duration_sec": 300,
-    "background_template": "ipad",
+    "background_template": "dark-gradient",
     "thumbnail_concept": "썸네일 방향 설명"
   },
   "scenes": [
@@ -77,7 +80,7 @@
       "image_requirements": {
         "count": 1,
         "style": "flat animated illustration",
-        "descriptions": ["A friendly tech logo animation with gradient background"],
+        "descriptions": ["A clean tech logo animation on dark navy gradient background"],
         "animation_hint": "zoom-in"
       }
     }
@@ -97,7 +100,7 @@
 
 - script/ 폴더가 비어있으면 → 사용자에게 대본 파일 요청
 - 파싱 실패 → 지원 형식(json/md/xlsx) 안내
-- background/ 폴더는 참고용, 배경 템플릿은 iPad 고정
+- 배경 템플릿은 다크 그라디언트 고정 — 프로젝트 background/ 폴더는 사용하지 않음 (2026-05-19 폐지)
 - thumbnail/ 없으면 → 메타 정보에서 제외
 
 ## 팀 통신 프로토콜

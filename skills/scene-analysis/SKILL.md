@@ -2,7 +2,9 @@
 name: scene-analysis
 description: |
   YouTube 영상 대본을 분석하여 정규화된 씬 구조(scene_plan.json)를 생성하는 스킬.
-  vp-scene-architect 에이전트가 사용한다. 직접 트리거되지 않으며, video-production 오케스트레이터를 통해 실행된다.
+  cp-scene-architect (content-production) 또는 vp-scene-architect (short-production) 에이전트가 사용한다.
+  직접 트리거되지 않으며, content-production / short-production 오케스트레이터를 통해 실행된다.
+  본편 영상은 content-production Phase 6에서 cp-scene-architect 가 호출하며, 사용자 직접 녹음 워크플로에서는 narration_tts 생성 단계를 skip한다.
 ---
 
 # 씬 분석 스킬
@@ -48,7 +50,7 @@ description: |
 | "데모", "실행", "결과" 키워드 | demo |
 | 마지막 1~2개 씬 | outro |
 
-> 배경은 iPad 템플릿(background.png) 고정. AuroraBackground variant는 사용하지 않는다.
+> 배경은 풀스크린 다크 그라디언트(2026-05-19 표준)로 고정. iPad 템플릿/마스코트는 폐지. 상세는 `~/.claude/skills/remotion-assembly/references/dark-gradient-background.md` 참조.
 
 ### 4. Visual 타입 부여 (의도 카테고리 기반 + 다이버시티 예산)
 
@@ -105,7 +107,9 @@ scene_plan.json의 각 씬에 추가 필드를 기록한다 (하위호환 유지
 
 ### 5. 배경 템플릿
 
-기본 배경 템플릿은 **iPad**로 고정한다: `"background_template": "ipad"`
+기본 배경 템플릿은 **다크 그라디언트**로 고정한다: `"background_template": "dark-gradient"`
+
+> 이전 값 `"ipad"`는 폐지(2026-05-19). 풀스크린 1920×1080 다크 캔버스(`#0b1120 → #1e293b → #0b1120` + amber radial)를 사용하며, iPad 프레임/마스코트는 더 이상 렌더링하지 않는다. 상세 사양: `~/.claude/skills/remotion-assembly/references/dark-gradient-background.md`
 
 ### 6. 썸네일 방향
 

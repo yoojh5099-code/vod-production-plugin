@@ -1,176 +1,186 @@
 ---
 name: video-production
 description: |
-  YouTube 영상을 대본부터 최종 렌더링까지 에이전트 팀으로 자동 제작하는 오케스트레이터 스킬.
-  4명의 전문 에이전트(씬 분석, 음성 생성, 모션 디자인, 영상 조립)를 조율하여 완성된 MP4 영상과 썸네일을 산출한다.
-  "영상 제작", "비디오 제작", "영상 만들어줘", "대본으로 영상 만들어줘", "스크립트를 영상으로", "video production",
+  사용자가 직접 녹음한 wav를 받아 Remotion 기반 YouTube 영상으로 자동 조립하는 오케스트레이터 스킬.
+  콘텐츠 기획·씬 분할·녹음 가이드는 content-production이 끝낸 상태를 전제로 한다.
+  wav 정규화 → timing 측정 → 모션 디자인(선택) → Remotion 조립 → Studio 프리뷰 → 사용자 승인 → 최종 렌더까지 처리한다.
+  "영상 제작", "비디오 제작", "영상 만들어줘", "녹음 끝났어 영상 만들어", "스크립트를 영상으로", "video production",
   "팀으로 영상 만들어줘", "하네스로 영상 제작" 등을 요청하면 이 스킬을 사용한다.
   단일 에이전트로 빠르게 만들고 싶으면 create-youtube 스킬을 사용할 것.
 ---
 
 # YouTube 영상 제작 오케스트레이터
 
-4명의 전문 에이전트를 **Pipeline** 패턴으로 조율하여 YouTube 영상을 제작한다.
+사용자 직접 녹음 wav를 입력으로 받아 Remotion 영상까지 조립하는 오케스트레이터.
+
+## 전제 조건
+
+이 스킬은 다음 산출물이 모두 준비된 상태에서 시작한다 (content-production이 만들어준 상태):
+
+| 파일 | 만든 주체 |
+|------|----------|
+| `<project>/script/02_writer_script.md` | cp-script-writer |
+| `<project>/_workspace/scene_plan.json` | cp-scene-architect |
+| `<project>/_workspace/visual_allocation_audit.md` | cp-scene-architect |
+| `<project>/_workspace/recording_guide.md` | content-production Phase 7 |
+| `<project>/_workspace/audio/seg-NN.wav` | **사용자 직접 녹음** |
+
+위 중 하나라도 빠져있으면 사용자에게 보고 후 적절한 단계로 안내한다 (대부분 `/content-production` 호출 또는 녹음 안내).
 
 ## 팀 구성
 
 | 에이전트 | 역할 | 스킬 | Phase |
 |---------|------|------|-------|
-| vp-scene-architect | 씬 분석, 구조화 | scene-analysis | 1 |
-| vp-voice-engineer | TTS 음성 + 타이밍 | voice-production | 2 |
-| (오케스트레이터) | **Audio Sync (멱등)** — tts/timing을 public/audio로 동기화 | — | **2.1** |
-| vp-motion-designer | 모션 패턴 설계/개선 (Remotion MCP 활용) | remotion-assembly | 2.5 (선택) |
-| vp-video-composer | Remotion 조립/렌더링 (컴포넌트 매핑 + narration 파싱 포함) | remotion-assembly | 3-4 |
+| (오케스트레이터) | wav 정규화 + timing 측정 | — | 1 |
+| (오케스트레이터) | Audio Sync (멱등) | — | 2 |
+| vp-motion-designer | 모션 패턴 설계/개선 (Remotion MCP) | remotion-assembly | 2.5 (선택) |
+| vp-video-composer | Remotion 조립/렌더링 | remotion-assembly | 3-4 |
 
-## 실행 모드
-
-- Phase 1: **서브에이전트** (단일 에이전트, 순차)
-- Phase 2: **서브에이전트** (단일 에이전트, 순차)
-- Phase 2.1: **오케스트레이터 직접 실행** (멱등 sync, 무조건 실행)
-- Phase 2.5: **서브에이전트** (단일 에이전트, 선택적 — 모션 개선 요청 시)
-- Phase 3-4: **서브에이전트** (단일 에이전트, 순차)
+씬 분할(scene-analysis) + 음성 생성(voice-production)은 더 이상 video-production이 담당하지 않는다 — 각각 content-production 팀과 사용자가 책임.
 
 ## 컴포넌트 패턴 레퍼런스
 
-패턴 관련 문서는 역할별로 분리되어 있다. 오케스트레이터는 **두 파일 모두 읽지 않는다** — 각 에이전트에 경로만 전달.
-
-| 파일 | 역할 | 주 사용자 | 분량 |
-|------|------|----------|------|
-| `~/.claude/skills/remotion-assembly/references/pattern-catalog.md` | **선택용** — 7 의도 카테고리, 24 visual 타입, tier별 예산 규칙 | vp-scene-architect | ~150줄 |
-| `~/.claude/skills/remotion-assembly/references/component-patterns.md` | **구현용** — 전체 패턴의 구현 코드와 props 스펙 | vp-video-composer, vp-motion-designer | ~2350줄 (Grep으로 섹션만 lazy load) |
-
-### 다이버시티 예산 (pattern-catalog.md 발췌)
-
-| tier | 개수 | 예산/영상 |
+| 파일 | 역할 | 주 사용자 |
 |------|------|----------|
-| signature | 7 | **1회씩** |
-| special | 3 | **2회 이하** |
-| generic | 14 | **3회 이하** |
+| `~/.claude/skills/remotion-assembly/references/pattern-catalog.md` | 선택용 (cp-scene-architect가 이미 사용) | (참고) |
+| `~/.claude/skills/remotion-assembly/references/component-patterns.md` | 구현용 — 전체 패턴의 구현 코드 + props 스펙 | vp-video-composer, vp-motion-designer |
 
-추가 규칙: 인접 씬 동일 visual 금지 · 3씬 이내 동일 visual 최대 2회 · 의도 카테고리 7 중 최소 5종 사용.
-**위반 시 vp-scene-architect가 같은 카테고리 내 대체 패턴으로 자동 리밸런싱하고 `_workspace/visual_allocation_audit.md`에 기록.**
-
-### 매핑 규칙
-- 카테고리 미매칭 시 → `default-scene` (GlassCard + BigTitle) fallback
-- 같은 visual이 2씬 이내 반복 → 이징/spring 변주 (component-patterns.md의 "이징 변주 가이드")
-- 텍스트 컴포넌트는 **3D 회전 금지** (rotateX/rotateY — 반전 버그). FlipCardGrid만 의도적 예외.
-
-### Studio 갤러리 프리뷰
-`npx remotion studio --port 3123` → `Patterns` 폴더에서 25종 컴포지션 6초 단위 독립 프리뷰.
-(씬 내부에서만 쓰는 WordByWordText / GlassCard / ParticleConfetti / MorphingShape / ConcentricRings는 갤러리 미노출)
+cp-scene-architect가 visual을 선택해서 scene_plan.json에 기록해 둔 상태이므로 video-production은 **구현만** 한다.
 
 ## 워크플로우
 
-### Phase 0: 준비
+### Phase 0: 전제 조건 검증 + sync QA
 
-1. 프로젝트 경로를 확인한다 (사용자 지정 또는 기본값)
-2. 필수 폴더 구조를 확인한다:
-   ```
-   <project>/
-   ├── script/    ← 대본 (필수)
-   ├── background/
-   ├── music/     ← BGM (필수)
-   ├── thumbnail/
-   ├── voice/
-   ├── image/
-   ├── output/
-   └── _workspace/
-   ```
-3. 누락된 폴더를 생성한다
-4. script/ 폴더에 대본 파일이 있는지 확인 — 없으면 사용자에게 요청
+진입 전에 `/content-qa` 호출 권장 — content-production 산출물(script, scene_plan, recording_guide)과 사용자 녹음(audio/)이 모두 sync된 상태인지 9개 layer 검증.
 
-### Phase 1: 씬 분석 (순차)
-
-`vp-scene-architect`를 서브에이전트로 실행한다:
-
-```
-Agent(
-  description: "씬 분석",
-  prompt: "~/.claude/agents/vp-scene-architect.md를 읽고 역할을 수행하라.
-    ~/.claude/skills/scene-analysis/SKILL.md의 워크플로우를 따른다.
-    Visual 선택은 반드시 ~/.claude/skills/remotion-assembly/references/pattern-catalog.md의
-    카테고리 매핑과 다이버시티 예산 규칙을 따른다 (component-patterns.md는 읽지 말 것).
-    프로젝트 경로: <project>
-    산출물 2개:
-      1. <project>/_workspace/scene_plan.json (visual + visual_category + visual_tier 포함)
-      2. <project>/_workspace/visual_allocation_audit.md (예산 검증 리포트)",
-  model: "opus"
-)
+```bash
+python3 ~/.claude/skills/content-qa/scripts/check_sync.py <project>
+# FAIL이면: python3 ~/.claude/skills/content-qa/scripts/check_sync.py <project> --apply
 ```
 
-**검증**:
-- `_workspace/scene_plan.json` 존재 + 유효한 JSON
-- `_workspace/visual_allocation_audit.md` 존재 + 예산 위반 없음 확인
-- 각 씬에 `visual_category`, `visual_tier` 필드 존재
+특히 다음 위반은 video-production 진입 전 반드시 해결:
+- Layer 6 (audio 누락) — 녹음 보강 필요
+- Layer 1 (script ↔ scene_plan narration) — `--apply`로 자동 동기화
+- Layer 2 (씬 개수 불일치) — `/content-production` Phase 6 재실행
 
-### Phase 2: 음성 생성 (순차)
+상세: `~/.claude/skills/content-qa/SKILL.md`
 
-`vp-voice-engineer`를 서브에이전트로 실행한다:
 
-```
-Agent(
-  description: "TTS 음성 생성",
-  prompt: "~/.claude/agents/vp-voice-engineer.md를 읽고 역할을 수행하라.
-    ~/.claude/skills/voice-production/SKILL.md의 워크플로우를 따른다.
-    프로젝트 경로: <project>
-    scene_plan.json을 읽고 TTS 음성을 생성하라.
-    결과를 <project>/_workspace/tts/에 저장하고 <project>/_workspace/timing.json을 작성하라.
 
-    ⚠️ 영문→한글 발음 치환 필수:
-    - narration에 Figma, Anthropic, Claude, Datadog, Canva, Opus 4.7 같은 영문 고유명/버전이 있으면
-      표준 치환 맵(voice-production SKILL.md 참조)으로 narration_tts 필드를 생성
-    - TTS는 narration_tts 우선, 자막은 원본 narration 유지 — 시청자는 화면 영문 + 음성 한국어 발음
-    - 새 브랜드가 있으면 프로젝트별로 치환 맵 확장",
-  model: "opus"
-)
-```
+오케스트레이터가 직접 다음을 확인:
 
-**검증**:
-- `_workspace/timing.json` 존재 + 씬 수 일치
-- `_workspace/tts/seg_*.wav` 파일들 존재
-- **generate_tts.py exit code 0** — 1이면 Gate B 위반. 사용자에게 해당 씬 ID + cps 수치 보고하고 수동 확인 요청. **절대 자동으로 다음 phase로 넘어가지 말 것**
-
-### Phase 2.1: Audio Sync (멱등, 오케스트레이터 직접 실행)
-
-⚠️ **이 단계는 최초 실행이든 재생성이든 무조건 실행한다.** Phase 2가 성공했으면 항상 뒤따른다. `vp-voice-engineer` 재실행 후 이 단계를 누락하면 Remotion이 옛 음성을 계속 재생하는 사일런트 버그가 발생한다 (graphrag 프로젝트 2026-05-03 실제 사고).
-
-**왜 오케스트레이터가 직접 하는가**: 서브에이전트 위임은 불필요한 복잡도. 단순 파일 복사 + Python 스크립트 한 번 실행이므로 오케스트레이터 Bash 한 번으로 처리.
-
-**Remotion 프로젝트 디렉터리 탐지**: `<project>/*-video/` 또는 `<project>/graphrag-video/` 같은 패턴. `<project>` 안에 `public/audio/` 를 갖는 디렉터리가 target.
-
-**실행 단계**:
 ```bash
 cd <project>
-REMOTION_DIR=$(ls -d *-video 2>/dev/null | head -1)  # 예: graphrag-video
+required_files=(
+    "script/02_writer_script.md"
+    "_workspace/scene_plan.json"
+    "_workspace/recording_guide.md"
+)
+for f in "${required_files[@]}"; do
+    if [ ! -f "$f" ]; then
+        echo "[FATAL] $f 누락 — /content-production 먼저 실행 필요"
+        exit 1
+    fi
+done
 
-# Remotion 프로젝트가 아직 없으면(최초 실행 전) 이 phase는 skip하고 Phase 3 후에 실행
+if [ ! -d "_workspace/audio" ] || [ -z "$(ls -A _workspace/audio/seg-*.wav 2>/dev/null)" ]; then
+    echo "[FATAL] _workspace/audio/seg-NN.wav 녹음 파일 없음"
+    echo "  → recording_guide.md 보고 Audacity로 녹음하세요"
+    exit 1
+fi
+```
+
+폴더 구조 확인/생성:
+```
+<project>/
+├── script/
+├── thumbnail/
+├── voice/
+├── image/
+├── output/
+├── music/                          ← BGM (선택)
+└── _workspace/
+    ├── scene_plan.json
+    ├── recording_guide.md
+    ├── audio/                      ← 사용자 녹음 wav (입력)
+    ├── tts/                        ← 정규화된 wav (Phase 1 산출)
+    └── timing.json                 ← Phase 1 산출
+```
+
+### Phase 1: wav 정규화 + 타이밍 측정 (오케스트레이터 직접)
+
+사용자 녹음(`_workspace/audio/seg-NN.wav`)은 어떤 샘플레이트/채널/비트심도여도 허용. 오케스트레이터가 표준 포맷으로 일괄 변환한다.
+
+**1-A. wav 정규화**
+
+```bash
+cd <project>
+~/.claude/skills/video-production/scripts/normalize_recordings.sh .
+```
+
+수행 내용:
+- `_workspace/audio/seg-NN.wav` (사용자 녹음, 어떤 sr/ch/bits 든) →
+- `_workspace/tts/seg_NN.wav` (24kHz / mono / 16-bit PCM)
+- 앞부분 무음 trim (-50dB 이하 0.1s+) + 100ms 패딩
+- 끝부분 자연 감쇠 보존 (의도적으로 trim 안 함)
+- 파일명 정규화: `seg-01.wav` → `seg_01.wav` (scene_plan.json id 매칭)
+
+**검증**:
+- 출력 파일 수 = scene_plan.json 씬 수
+- 각 wav: 24000Hz / mono / 16-bit (스크립트 내부 검증)
+
+**1-B. 타이밍 측정**
+
+```bash
+cp ~/.claude/skills/video-production/scripts/generate_timing.py <project>/generate_timing.py
+cd <project>
+python3 generate_timing.py
+```
+
+산출: `_workspace/timing.json` (씬당 startSec, durationSec, audioDuration, subtitle, narration)
+
+**PADDING_SEC=0.3 디폴트** — 사람 직접 녹음 + narration only 영상에 맞춰진 표준값. TTS 합성과 달리 사람 녹음은 씬 간 톤·볼륨 미세 편차 때문에 0.6초 패딩이 답답하게 들린다는 사용자 피드백 누적 결과 (claude-vs-codex 프로젝트 §10.4 검증).
+
+**미세 조정**: 답답하면 0.4, 너무 빠르면 0.2. timing.json 재생성 → Phase 2 audio sync → Studio 핫리로드.
+
+**검증**:
+- `_workspace/timing.json` 존재 + 유효 JSON
+- 씬 수 일치 (scene_plan.json과 동일)
+- exit code 0 (누락 wav 없음)
+
+### Phase 2: Audio Sync (오케스트레이터 직접, 멱등)
+
+⚠️ **이 단계는 wav가 갱신될 때마다 무조건 실행한다.** 누락 시 Remotion이 옛 음성을 재생하는 사일런트 버그 (graphrag 프로젝트 2026-05-03 사고).
+
+**Remotion 프로젝트 디렉터리 탐지**: `<project>/*-video/` 패턴.
+
+```bash
+cd <project>
+REMOTION_DIR=$(ls -d *-video 2>/dev/null | head -1)
+
 if [ -z "$REMOTION_DIR" ]; then
-  echo "[Phase 2.1] Remotion 프로젝트 미생성 — Phase 3 이후 재동기화 필요"
-  # Phase 3 완료 시 오케스트레이터가 Phase 2.1을 한 번 더 실행
+  echo "[Phase 2] Remotion 프로젝트 미생성 — Phase 3 이후 재동기화 필요"
 else
   mkdir -p "$REMOTION_DIR/public/audio"
   cp _workspace/tts/seg_*.wav "$REMOTION_DIR/public/audio/"
   cp _workspace/timing.json "$REMOTION_DIR/public/audio/timing.json"
-  # scenes.ts의 startSec/durationSec/audioDurationSec/subtitleStartsSec 갱신
   if [ -f update_scenes_ts.py ]; then
     python3 update_scenes_ts.py
   fi
-  echo "[Phase 2.1] Audio sync 완료"
+  echo "[Phase 2] Audio sync 완료"
 fi
 ```
 
 **검증**:
-- `<project>/<project>-video/public/audio/seg_XX.wav` 각 파일의 길이가 `_workspace/tts/seg_XX.wav`와 일치 (ffprobe로 체크)
-- `<project>/<project>-video/public/audio/timing.json` 과 `_workspace/timing.json` 이 identical
-- `scenes.ts`의 `audioDurationSec` 값이 실제 wav 길이와 오차 0.05s 이내
+- `<remotion>/public/audio/seg_XX.wav` 파일 길이 = `_workspace/tts/seg_XX.wav`
+- `<remotion>/public/audio/timing.json` 과 `_workspace/timing.json` identical
+- `scenes.ts`의 `audioDurationSec` 오차 0.05s 이내
 
-**update_scenes_ts.py가 없는 경우**: Phase 3에서 composer가 scenes.ts를 처음 생성할 것이므로, 이 경우 Phase 2.1의 copy 부분만 수행하고 scenes.ts 갱신은 skip. Phase 3 완료 후 composer가 자동 생성.
+**최초 실행 케이스**: Remotion 프로젝트가 아직 없으면 이 단계 skip. Phase 3 완료 후 자동 재실행됨.
 
 ### Phase 2.5: 모션 디자인 개선 (선택적)
 
-사용자가 모션 그래픽 개선을 요청한 경우에만 실행한다. 기본 파이프라인에서는 건너뛴다.
-
-`vp-motion-designer`를 서브에이전트로 실행한다:
+사용자가 모션 그래픽 개선을 요청한 경우에만 실행. 기본 파이프라인에서는 건너뛴다.
 
 ```
 Agent(
@@ -188,19 +198,9 @@ Agent(
 )
 ```
 
-**트리거 조건**:
-- 사용자가 "모션 개선", "애니메이션 개선", "모션 디자인" 등을 명시적으로 요청
-- 사용자가 "모션 패턴 추가", "새 컴포넌트" 등을 요청
-- 오케스트레이터가 component-patterns.md 보강이 필요하다고 판단
+**트리거**: "모션 개선", "애니메이션 개선", "모션 패턴 추가" 같은 명시적 요청.
 
-**검증**:
-- 새/수정된 컴포넌트가 빌드 에러 없이 컴파일됨
-- Remotion Studio에서 프리뷰 정상 렌더링
-- component-patterns.md에 새 패턴이 올바른 포맷으로 추가됨
-
-### Phase 3: 영상 조립 (순차)
-
-`vp-video-composer`를 서브에이전트로 실행한다:
+### Phase 3: 영상 조립 (vp-video-composer)
 
 ```
 Agent(
@@ -211,7 +211,18 @@ Agent(
     scene_plan.json에서 직접 컴포넌트를 매핑하고 narration에서 props를 추출하라.
     Remotion 프로젝트 셋업 → 컴포넌트 구현 → 조립까지 진행하라.
     컴포넌트 패턴은 ~/.claude/skills/remotion-assembly/references/component-patterns.md를 참조.
-    iPad 템플릿은 ~/.claude/skills/remotion-assembly/references/ipad-template-pattern.md를 참조.
+    배경 표준은 ~/.claude/skills/remotion-assembly/references/dark-gradient-background.md를 참조.
+
+    ⚠️ 배경/마스코트 정책 (2026-05-19 확정):
+    - iPad 템플릿(IPadTemplate, background.png) 사용 금지
+    - 마스코트(Mascot, mascot.png) 사용 금지
+    - 표준 배경: 풀스크린 다크 그라디언트
+        radial-gradient(ellipse at top, rgba(245,158,11,0.12) 0%, transparent 55%),
+        linear-gradient(180deg, #0b1120 0%, #1e293b 50%, #0b1120 100%)
+    - 콘텐츠 패딩: padding: '80px 120px 200px' (하단 200px = 자막 safe area)
+    - 텍스트는 다크 톤에 맞는 slate-100~300 (#f1f5f9 / #e2e8f0 / #cbd5e1) 사용
+    - 액센트는 amber #f59e0b 메인 + cyan/emerald/rose/violet 중 보조 1~2개
+    - 점선·축·비활성 요소는 slate-700/800 금지, slate-400(#94a3b8) 또는 slate-500(#64748b) 사용
 
     ⚠️ 브랜드 로고 자동 매칭 필수:
     - ~/.claude/skills/remotion-assembly/references/brand-logos/manifest.yml을 로드
@@ -220,27 +231,29 @@ Agent(
     - 매칭된 브랜드의 SVG를 public/images/로 복사 (프로젝트 image/에 동명 파일이 있으면 프로젝트 우선)
     - SceneVisual.tsx의 해당 씬에 BrandLogo / QuadrantMatrix.logoSrc 등으로 주입
     - 결과를 <project>/_workspace/logo_matches.md에 리포트 (매칭 결과 + 미매칭 브랜드 언급)
-    - 상세 절차는 remotion-assembly SKILL.md의 "브랜드 로고 자동 매칭" 섹션 참조
+    - 상세 절차는 remotion-assembly SKILL.md의 '브랜드 로고 자동 매칭' 섹션 참조
 
-    ⚠️ IPadTemplate 레이아웃 표준 (2026-04-22 확정):
-    - 콘텐츠 패딩: paddingTop: 90, paddingBottom: 90 (대칭) — 콘텐츠 수직 중심 스크린 정중앙(y=501)
-    - Mascot: overlay prop, right: 20, bottom: 20, size: 180 (iPad 스크린 내부 우하단 고정)
-    - TimedSubtitle: overlay prop, bottom: 12, left: 50% + translateX(-50%), max-width: 1400 (스크린 하단 가장자리 중앙)
-    - 상세: ipad-template-pattern.md "표준 레이아웃" 섹션
+    ⚠️ 다크 그라디언트 캔버스 레이아웃 표준 (2026-05-19 확정):
+    - 캔버스: 1920×1080 풀스크린, iPad 프레임/노치 없음
+    - 콘텐츠 컨테이너: <AbsoluteFill style={{display:'flex', alignItems:'center', justifyContent:'center', padding:'80px 120px 200px'}}>
+    - 콘텐츠 가용 영역: 1680×800 (iPad 720px 대비 +80px 여유)
+    - TimedSubtitle: 캔버스 좌표 bottom: 96, left:50% + translateX(-50%), max-width: 1600
+    - 자막 배경: rgba(11,17,32,0.78) + backdrop-filter blur(10px) + amber 0.18 보더
+    - 상세: dark-gradient-background.md 'MainVideo.tsx 패턴' / '자막 표준' 섹션
 
     ⚠️ 긴 씬 스테이지 전개 필수 (durationSec ≥ 18 OR narration 4문장+ OR 정적 카드):
     - 별도 SceneNReveal 컴포넌트로 분리
     - 씬 길이 비율로 4 스테이지 분할 (0 / 0.22 / 0.48 / 0.78)
     - 누적 배치 (이전 스테이지 사라지지 않음)
     - 마지막 스테이지: URL/CTA/핵심 숫자 강조 (glow 맥동 + 커서 깜빡임)
-    - 상세: component-patterns.md "긴 씬의 시간차 전개 패턴" 섹션
+    - 상세: component-patterns.md '긴 씬의 시간차 전개 패턴' 섹션
 
-    ⚠️ iPad 오버플로 검증 필수:
-    - iPad 스크린 유효 콘텐츠 영역은 세로 ≈720px — 이를 넘는 visual은 위아래가 잘리거나 자막과 겹친다
-    - component-patterns.md의 'iPad 제약에 맞춘 축소 스펙' 섹션 표를 보고,
-      scene_plan.json에 react-loop/quadrant-matrix/horse-harness/lethal-triangle/timeline-cards 등이 있으면
-      해당 스펙의 scale·margin·gap을 반드시 적용하라 (래퍼 수식: M = H × (1 - S) / 2, transformOrigin은 center center)
-    - Remotion Studio 프리뷰에서 각 씬이 iPad 프레임 위·아래로 벗어나지 않는지 시각 검증
+    ⚠️ 콘텐츠 오버플로 검증 (다크 그라디언트 캔버스):
+    - 가용 콘텐츠 영역은 1680×800 (1920×1080에서 padding 80/120/200 적용 후)
+    - 800px를 넘는 헤비 다이어그램(react-loop·quadrant-matrix·horse-harness·lethal-triangle·timeline-cards 6+스텝 등)은
+      scale 0.85~0.9 + 대칭 음수 마진(M = H × (1 - S) / 2, transformOrigin: center center) 래퍼 적용
+    - 대부분의 다이어그램(원본 700~800px)은 원본 그대로 들어감 — iPad 시절 강제 축소는 더 이상 필수가 아님
+    - Remotion Studio 프리뷰에서 콘텐츠가 자막(bottom 96 영역)과 겹치지 않는지 시각 검증
 
     ⚠️ Phase 4 승인 게이트는 오케스트레이터가 담당한다:
     - Remotion Studio 실행과 최종 렌더링(npx remotion render)은 이 에이전트가 직접 수행하지 말 것
@@ -249,79 +262,23 @@ Agent(
 )
 ```
 
-### Phase 3.5: Whisper Pre-render Gate (Gate C, 오케스트레이터 직접 실행)
+**Phase 3 완료 후 오케스트레이터가 Phase 2를 한 번 더 실행** — composer가 update_scenes_ts.py를 처음 만들었기 때문.
 
-⚠️ Phase 3 완료 후 **Phase 4 Studio를 띄우기 전에** 반드시 실행한다. TTS auto-trim 버그가 Gate A/B를 둘 다 빠져나간 edge case를 최종 방어한다.
+### Phase 3.5: Whisper Pre-render Gate (사람 녹음 워크플로 기본 SKIP)
 
-**목적**: 각 씬 wav를 Whisper로 전사해 **narration_tts 마지막 15자**가 전사에 포함되는지 확인. 포함되지 않으면 해당 씬의 끝부분이 잘렸다는 강력한 신호.
+⚠️ **사용자 직접 녹음 워크플로에서는 기본적으로 skip한다.** Whisper Gate C는 TTS auto-trim 버그 방어용으로 설계됐는데, 사람이 직접 녹음하면 narration과 100% 일치하지 않는 자연스러운 변형이 다수 발생하여 모두 false positive로 잡힌다 (claude-vs-codex 프로젝트 §10.3에서 34건 위반 모두 false positive로 검증됨).
 
-**실행**:
-```bash
-cd <project>
-python3 <<'EOF'
-import json, re, subprocess, sys, wave, os
+다만 **사용자가 명시적으로 요청**하면 실행 가능. 위반 검증 시 끝부분 단어가 의미상 일치하면 false positive로 판정해 강제 진행하도록 안내.
 
-SCENE_PLAN = "_workspace/scene_plan.json"
-PUBLIC_AUDIO = None
-for d in os.listdir("."):
-    if d.endswith("-video") and os.path.isdir(f"{d}/public/audio"):
-        PUBLIC_AUDIO = f"{d}/public/audio"
-        break
-assert PUBLIC_AUDIO, "Remotion public/audio 디렉터리를 찾을 수 없음"
+### Phase 4: 프리뷰 + 렌더링 (오케스트레이터 직접)
 
-try:
-    import whisper
-except ImportError:
-    print("[WARN] whisper 미설치 — pip install openai-whisper 후 다시 실행. Gate C skip.")
-    sys.exit(0)
+Phase 3 서브에이전트는 조립만 마치고 종료한다. 아래 단계는 **오케스트레이터(본 스킬을 실행하는 주 에이전트)**가 직접 수행한다 — 서브에이전트는 유저 턴을 대기할 수 없어 승인 게이트가 무시되기 쉽기 때문.
 
-model = whisper.load_model("medium")
-scenes = json.load(open(SCENE_PLAN))["scenes"]
-violations = []
-for s in scenes:
-    sid = s["id"]
-    wav = f"{PUBLIC_AUDIO}/seg_{sid:02d}.wav"
-    if not os.path.exists(wav):
-        violations.append((sid, "wav 없음"))
-        continue
-    text_expected = (s.get("narration_tts") or s["narration"]).strip()
-    tail = re.sub(r"[\s'\"'\"()\[\].,?!]", "", text_expected)[-15:]
-    result = model.transcribe(wav, language="ko", fp16=False)
-    transcript = re.sub(r"[\s'\"'\"()\[\].,?!]", "", result["text"])
-    if tail not in transcript:
-        violations.append((sid, f"tail='{tail}' not in transcript"))
-        print(f"[GATE-C FAIL] 씬 {sid}: 마지막 15자 누락")
-        print(f"   expected tail: {tail}")
-        print(f"   transcript:    {transcript[-40:]}")
-if violations:
-    print(f"\n[FATAL] Gate C 위반 씬 {len(violations)}개: {[v[0] for v in violations]}")
-    sys.exit(1)
-print("[DONE] Gate C 통과 — 모든 씬의 마지막 15자가 전사에 포함됨")
-EOF
-```
-
-**실패 시**:
-1. 렌더 중단
-2. 사용자에게 위반 씬 ID + 해당 `narration_tts` 끝부분 + 전사 끝부분 보고
-3. 선택지 제시: (a) TTS 재생성(해당 씬만), (b) 해당 씬 수동 청취 후 승인 시 강제 진행, (c) 중단하고 원고 수정
-
-**비용**: Whisper medium 1회 로드(~30s) + 씬당 1~3s 전사. 25씬 영상 기준 총 2~3분. 렌더 시간(10~30분)에 비하면 미미.
-
-**Gate A/B/C 역할 분담**:
-- Gate A (trim ratio): 매 문장 생성 직후, 공짜
-- Gate B (char/sec): 씬 단위, 공짜
-- Gate C (Whisper): 렌더 직전 1회, 2~3분 — 최종 안전망
-
-### Phase 4: 프리뷰 + 렌더링 (오케스트레이터가 직접 담당)
-
-Phase 3 서브에이전트는 조립만 마치고 종료한다. 아래 단계는 **오케스트레이터(본 스킬을 실행하는 주 에이전트)**가 직접 수행한다 — 서브에이전트에게 위임하지 말 것. 서브에이전트는 유저 턴을 대기할 수 없어 승인 게이트가 무시되기 쉽기 때문.
-
-1. **Gate C 통과 확인** (Phase 3.5) — 실패면 여기서 중단
-2. `cd <project>/<project-name>-video && npx remotion studio --port 3123 --gl=angle` (백그라운드 실행)
-3. 사용자에게 `http://localhost:3123` 확인 요청 — **여기서 반드시 멈추고 사용자 응답을 기다릴 것**
-4. 사용자 피드백 반영 (코드 수정 → 핫리로드로 즉시 반영)
-5. **사용자의 명시적 승인("렌더링 진행", "승인" 등) 후에만** 최종 렌더링
-6. `output/output.mp4` + `output/thumbnail.png` 생성
+1. `cd <project>/<project-name>-video && nohup npx remotion studio --port 3123 --gl=angle > /tmp/remotion-studio.log 2>&1 & disown`
+2. 사용자에게 `http://localhost:3123` 확인 요청 — **여기서 반드시 멈추고 사용자 응답을 기다릴 것**
+3. 사용자 피드백 반영 (코드 수정 → 핫리로드로 즉시 반영)
+4. **사용자의 명시적 승인("렌더링 진행", "승인" 등) 후에만** 최종 렌더링
+5. `output/output.mp4` + `output/thumbnail.png` 생성
 
 ### Phase 3 ↔ Phase 4 금지사항
 
@@ -331,7 +288,6 @@ Phase 3 서브에이전트는 조립만 마치고 종료한다. 아래 단계는
 
 ### Phase 5: 완료
 
-최종 산출물 보고:
 ```
 ✅ 영상 제작 완료
 - 영상: <project>/output/output.mp4
@@ -343,72 +299,71 @@ Phase 3 서브에이전트는 조립만 마치고 종료한다. 아래 단계는
 ## 데이터 흐름
 
 ```
-[script/] ──┐
-[background/]──┤
-[thumbnail/]───┘
-       ↓
-  Phase 1: [vp-scene-architect]
-       ↓
-  _workspace/scene_plan.json
-       ↓
-  Phase 2: [vp-voice-engineer]
-       │  Gate A (MIN_KEEP_RATIO) + Gate B (char/sec) 필수 통과
-       ↓
-  _workspace/tts/seg_XX.wav + _workspace/timing.json
-       ↓
-  Phase 2.1: [오케스트레이터] Audio Sync (멱등)
-       │  _workspace/tts/*.wav → <project>-video/public/audio/
-       │  _workspace/timing.json → <project>-video/public/audio/timing.json
-       │  update_scenes_ts.py (존재 시)
-       ↓
-  Phase 2.5 (선택): [vp-motion-designer] + Remotion MCP
-       │  component-patterns.md 개선/확장
-       ↓
-  Phase 3: [vp-video-composer]
-       │  scene_plan.json에서 직접 컴포넌트 매핑 + narration 파싱
-       │  (최초 실행이면 update_scenes_ts.py도 이 단계에서 생성)
-       ↓
-  [오케스트레이터] Phase 2.1 재실행 (update_scenes_ts.py가 이제 존재하므로)
-       ↓
-  [오케스트레이터] Whisper Pre-render Gate (Gate C)
-       │  각 씬 wav를 Whisper로 전사 → narration_tts 마지막 15자 포함 검증
-       │  실패 시: 사용자 에스컬레이션 + 렌더 중단
-       ↓
-  Phase 4: [오케스트레이터] Remotion Studio → 사용자 확인
-       ↓ (승인)
-  output/output.mp4 + output/thumbnail.png
+[content-production 산출물]
+   ├─ script/02_writer_script.md
+   ├─ _workspace/scene_plan.json
+   └─ _workspace/recording_guide.md
+        ↓
+[사용자 직접 녹음] _workspace/audio/seg-NN.wav
+        ↓
+Phase 1-A: [오케스트레이터] normalize_recordings.sh
+   _workspace/audio/seg-NN.wav (any sr/ch/bits)
+   → _workspace/tts/seg_NN.wav (24kHz/mono/16-bit + 무음 trim + 100ms 패딩)
+        ↓
+Phase 1-B: [오케스트레이터] generate_timing.py (PADDING_SEC=0.3)
+   → _workspace/timing.json
+        ↓
+Phase 2: [오케스트레이터] Audio Sync (멱등)
+   _workspace/tts/*.wav → <project>-video/public/audio/
+   _workspace/timing.json → <project>-video/public/audio/timing.json
+   update_scenes_ts.py (존재 시)
+        ↓
+Phase 2.5 (선택): [vp-motion-designer] component-patterns.md 개선
+        ↓
+Phase 3: [vp-video-composer] Remotion 조립 + TypeScript 검증
+        ↓
+[오케스트레이터] Phase 2 재실행 (update_scenes_ts.py가 이제 존재하므로)
+        ↓
+Phase 4: [오케스트레이터] Studio 프리뷰 → 사용자 승인
+        ↓
+output/output.mp4 + output/thumbnail.png
 ```
 
 ## 에러 핸들링
 
 | Phase | 에러 | 대응 |
 |-------|------|------|
-| 0 | script/ 비어있음 | 사용자에게 대본 요청, 진행 중단 |
-| 0 | music/ 비어있음 | 경고 후 BGM 없이 진행 |
-| 1 | 대본 파싱 실패 | 지원 형식 안내, 진행 중단 |
-| 2 | TTS 모델 미설치 | Fatal — 설치 안내 |
-| 2 | TTS 부분 실패 | 실패 세그먼트에 무음 fallback, 계속 진행 |
-| 2 | **Gate B 위반 (exit code 1)** | **사용자 에스컬레이션 — 씬 ID + cps 수치 보고, 다음 phase 진행 금지** |
-| 2.1 | Remotion 디렉터리 미탐지 | Phase 3 완료 후 재실행 (skip + 플래그) |
-| 2.1 | 파일 복사 실패 | 디스크 공간/권한 확인, Fatal |
+| 0 | scene_plan.json 누락 | `/content-production` 먼저 실행 안내, 진행 중단 |
+| 0 | recording_guide.md 누락 | `/content-production` Phase 7 누락 — 사용자에게 보고 |
+| 0 | _workspace/audio/ 비어있음 | 녹음 가이드 안내, 진행 중단 |
+| 1-A | 어떤 wav가 normalize 실패 | 해당 파일 보고, 사용자에게 재녹음 요청 |
+| 1-A | 출력 wav 수 ≠ 씬 수 | 누락 씬 ID 보고, 진행 중단 |
+| 1-B | 특정 wav 누락 | 5초 무음 fallback + 누락 씬 ID 보고. exit 1 |
+| 2 | Remotion 디렉터리 미탐지 | Phase 3 완료 후 재실행 (skip + 플래그) |
+| 2 | 파일 복사 실패 | 디스크 공간/권한 확인, Fatal |
 | 2.5 | Remotion MCP 응답 없음 | 공식 문서 URL 직접 참조로 fallback |
 | 2.5 | 새 컴포넌트 빌드 실패 | TypeScript 에러 수정, 기존 패턴으로 fallback |
 | 3 | 컴포넌트 매핑 실패 | 해당 씬은 default-scene (GlassCard + BigTitle)로 fallback |
 | 3 | Remotion 셋업 실패 | Node.js v18+ 확인, 에러 보고 |
-| 3.5 | **Gate C 위반 (Whisper)** | **렌더 중단, 위반 씬 보고, 재생성/수동승인/원고수정 중 선택** |
-| 3.5 | Whisper 미설치 | 경고 후 Gate C skip (소프트 페일), 계속 진행하되 Phase 4에서 사용자 청취 확인 필수 |
 | 4 | GPU 렌더링 실패 | CPU 폴백 |
 
 ## 테스트 시나리오
 
 ### 정상 흐름
-- 입력: `vod/test/script/script.json` (10씬), BGM in `music/`, voice ref
-- 기대: Phase 1 → scene_plan.json (10씬). Phase 2 → 10 wav + timing.json. Phase 3 → Remotion 프로젝트 완성 (scene_plan.json에서 직접 컴포넌트 매핑). Phase 4 → Studio 프리뷰 → 승인 → output.mp4 + thumbnail.png
+- 입력: content-production 산출물 7개 + `_workspace/audio/seg-01.wav~seg-NN.wav` (사용자 녹음)
+- 기대: Phase 1 → tts/ + timing.json 생성. Phase 2 → public/audio sync. Phase 3 → Remotion 조립. Phase 4 → Studio 프리뷰 → 사용자 승인 → output.mp4 + thumbnail.png
 
-### 에러 흐름 — TTS 모델 없음
-- 입력: 동일, 단 ~/models/Qwen3-TTS-Base 없음
-- 기대: Phase 2에서 voice-engineer가 Fatal 보고. 오케스트레이터가 에러 보고 + 모델 설치 안내
+### 에러 흐름 — 녹음 누락
+- 입력: scene_plan.json은 58씬인데 `_workspace/audio/`에 50개만
+- 기대: Phase 1-A에서 8개 누락 씬 ID 보고, "추가 녹음 후 다시 호출" 안내, 진행 중단
 
 ### 자동 연결 모드
-- 입력: "이 주제로 기획부터 영상까지 한번에 해줘"
-- 기대: content-production(기획) 실행 → script/script.json 생성 → video-production(제작) 자동 실행
+- 입력: 사용자가 "녹음 끝났어. 영상 만들어줘"
+- 기대: Phase 0 검증 통과 시 자동 진행. 검증 실패 시 누락 산출물 안내.
+
+## 관련 스킬
+
+- `content-production` — 이 스킬의 입력(scene_plan.json, recording_guide.md)을 만드는 선행 스킬
+- `scene-analysis` — content-production이 사용 (cp-scene-architect)
+- `voice-production` — TTS-only 워크플로용 (이 스킬에서는 사용 안 함, deprecated)
+- `remotion-assembly` — vp-video-composer / vp-motion-designer가 사용

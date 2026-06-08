@@ -1,12 +1,14 @@
 ---
 name: voice-production
 description: |
-  YouTube 영상의 씬별 TTS 음성을 생성하고 타이밍 데이터를 추출하는 스킬.
-  vp-voice-engineer 에이전트가 사용한다. Qwen3-TTS-Base 모델로 voice cloning 기반 음성을 생성하고, 실제 오디오 길이를 측정하여 timing.json을 만든다.
-  직접 트리거되지 않으며, video-production 오케스트레이터를 통해 실행된다.
+  [DEPRECATED — 사용자 직접 녹음 워크플로로 전환 (2026-05-26)]
+  Qwen3-TTS-Base 기반 TTS 음성 생성 + timing.json 산출 스킬. 본편 video-production 파이프라인은 더 이상 이 스킬을 사용하지 않는다 (사용자가 Audacity로 직접 녹음한 wav를 video-production이 정규화).
+  TTS 빠른 드래프트가 필요하거나 short-production 같은 외부 워크플로에서만 사용. 신규 영상 제작에서는 호출 금지.
 ---
 
-# 음성 제작 스킬
+# 음성 제작 스킬 (DEPRECATED)
+
+> ⚠️ **2026-05-26 deprecated.** 본편 영상 제작은 사용자가 직접 Audacity로 녹음하고 video-production이 wav 정규화·timing 측정을 직접 수행하는 방식으로 전환됨. 이 스킬은 TTS 빠른 드래프트 또는 short-production 같은 외부 워크플로용으로만 보존.
 
 씬별 TTS 음성을 생성하고 정확한 타이밍 데이터를 추출한다. 타이밍 데이터는 영상의 씬 길이 결정과 음성-자막 싱크의 기준이 된다.
 
